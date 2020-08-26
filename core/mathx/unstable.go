@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// 获取数值在某个偏差±范围内的数值
 type Unstable struct {
 	deviation float64
 	r         *rand.Rand
