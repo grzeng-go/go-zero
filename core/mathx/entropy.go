@@ -4,6 +4,7 @@ import "math"
 
 const epsilon = 1e-6
 
+// 计算熵，值越趋于1，则分布越均匀
 func CalcEntropy(m map[interface{}]int) float64 {
 	if len(m) == 0 || len(m) == 1 {
 		return 1
