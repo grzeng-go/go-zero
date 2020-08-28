@@ -18,7 +18,7 @@ type RpcProxy struct {
 	lock        sync.Mutex
 }
 
-func NewRpcProxy(backend string, opts ...internal.ClientOption) *RpcProxy {
+func NewProxy(backend string, opts ...internal.ClientOption) *RpcProxy {
 	return &RpcProxy{
 		backend:     backend,
 		clients:     make(map[string]Client),
@@ -38,11 +38,11 @@ func (p *RpcProxy) TakeConn(ctx context.Context) (*grpc.ClientConn, error) {
 			return client, nil
 		}
 
-		client, err := NewClient(RpcClientConf{
-			Server: p.backend,
-			App:    cred.App,
-			Token:  cred.Token,
-		}, p.options...)
+		opts := append(p.options, WithDialOption(grpc.WithPerRPCCredentials(&auth.Credential{
+			App:   cred.App,
+			Token: cred.Token,
+		})))
+		client, err := NewClientWithTarget(p.backend, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -56,5 +56,5 @@ func (p *RpcProxy) TakeConn(ctx context.Context) (*grpc.ClientConn, error) {
 		return nil, err
 	}
 
-	return val.(*RpcClient).Conn(), nil
+	return val.(Client).Conn(), nil
 }

@@ -1,8 +1,27 @@
-# go-zero项目介绍
+# go-zero
 
 [![Go](https://github.com/tal-tech/go-zero/workflows/Go/badge.svg?branch=master)](https://github.com/tal-tech/go-zero/actions)
 [![codecov](https://codecov.io/gh/tal-tech/go-zero/branch/master/graph/badge.svg)](https://codecov.io/gh/tal-tech/go-zero)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tal-tech/go-zero)](https://goreportcard.com/report/github.com/tal-tech/go-zero)
+[![Release](https://img.shields.io/github/v/release/tal-tech/go-zero.svg?style=flat-square)](https://github.com/tal-tech/go-zero)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 0. go-zero介绍
+
+go-zero是一个集成了各种工程实践的web和rpc框架。通过弹性设计保障了大并发服务端的稳定性，经受了充分的实战检验。
+
+go-zero 包含极简的 API 定义和生成工具 goctl，可以根据定义的 api 文件一键生成 Go, iOS, Android, Kotlin, Dart, TypeScript, JavaScript 代码，并可直接运行。
+
+使用go-zero的好处：
+
+* 轻松获得支撑千万日活服务的稳定性
+* 内建级联超时控制、限流、自适应熔断、自适应降载等微服务治理能力，无需配置和额外代码
+* 微服务治理中间件可无缝集成到其它现有框架使用
+* 极简的API描述，一键生成各端代码
+* 自动校验客户端请求参数合法性
+* 大量微服务治理和并发工具包
+
+<img src="doc/images/architecture.png" alt="架构图" width="1500" />
 
 ## 1. go-zero框架背景
 
@@ -55,33 +74,20 @@ go-zero是一个集成了各种工程实践的包含web和rpc框架，有如下�
 
 ![弹性设计](doc/images/resilience.jpg)
 
-## 4. go-zero框架收益
-
-* 保障大并发服务端的稳定性，经受了充分的实战检验
-* 极简的API定义
-* 一键生成Go, iOS, Android, Dart, TypeScript, JavaScript代码，并可直接运行
-* 服务端自动校验参数合法性
-
-## 5. go-zero近期开发计划
+## 4. go-zero近期开发计划
 
 * 自动生成API mock server，便于客户端开发
 * 自动生成服务端功能测试
 
-## 6. Installation
+## 5. Installation
 
-1. 在项目目录下通过如下命令安装：
+在项目目录下通过如下命令安装：
 
-   ```shell
-   go get -u github.com/tal-tech/go-zero
-   ```
+```shell
+go get -u github.com/tal-tech/go-zero
+```
 
-2. 代码里导入go-zero
-
-   ```go
-   import "github.com/tal-tech/go-zero"
-   ```
-
-## 7. Quick Start
+## 6. Quick Start
 
 1. 编译goctl工具
 
@@ -95,7 +101,7 @@ go-zero是一个集成了各种工程实践的包含web和rpc框架，有如下�
 
    ```go
    type Request struct {
-     Name string `path:"name"`
+     Name string `path:"name,options=you|me"` // 框架自动验证请求参数是否合法
    }
    
    type Response struct {
@@ -125,7 +131,6 @@ go-zero是一个集成了各种工程实践的包含web和rpc框架，有如下�
    生成的文件结构如下：
 
    ```
-   .
    ├── greet
    │   ├── etc
    │   │   └── greet-api.json        // 配置文件
@@ -143,8 +148,6 @@ go-zero是一个集成了各种工程实践的包含web和rpc框架，有如下�
    │       └── types
    │           └── types.go          // 请求、返回等类型定义
    └── greet.api                     // api描述文件
-   
-   8 directories, 9 files
    ```
    生成的代码可以直接运行：
    
@@ -174,10 +177,18 @@ go-zero是一个集成了各种工程实践的包含web和rpc框架，有如下�
    ...
    ```
 
-## 8. 文档
+## 7. Benchmark
 
+![benchmark](doc/images/benchmark.png)
+
+[测试代码见这里](https://github.com/smallnest/go-web-framework-benchmark)
+
+## 8. 文档 (逐步完善中)
+
+* [从0到1快速构建一个高并发的微服务系统](doc/shorturl.md)
 * [goctl使用帮助](doc/goctl.md)
+* [关键字替换和敏感词过滤工具](doc/keywords.md)
 
-### 微信交流群
+## 9. 微信交流群
 
 添加我的微信：kevwan，请注明go-zero，我拉进go-zero社区群🤝

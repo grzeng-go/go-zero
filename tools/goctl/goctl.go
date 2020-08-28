@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tal-tech/go-zero/tools/goctl/api/ktgen"
 	"github.com/tal-tech/go-zero/core/logx"
 	"github.com/tal-tech/go-zero/tools/goctl/api/apigen"
 	"github.com/tal-tech/go-zero/tools/goctl/api/dartgen"
@@ -12,11 +11,13 @@ import (
 	"github.com/tal-tech/go-zero/tools/goctl/api/format"
 	"github.com/tal-tech/go-zero/tools/goctl/api/gogen"
 	"github.com/tal-tech/go-zero/tools/goctl/api/javagen"
+	"github.com/tal-tech/go-zero/tools/goctl/api/ktgen"
 	"github.com/tal-tech/go-zero/tools/goctl/api/tsgen"
 	"github.com/tal-tech/go-zero/tools/goctl/api/validate"
 	"github.com/tal-tech/go-zero/tools/goctl/configgen"
 	"github.com/tal-tech/go-zero/tools/goctl/docker"
 	"github.com/tal-tech/go-zero/tools/goctl/feature"
+	"github.com/tal-tech/go-zero/tools/goctl/model/sql/command"
 	"github.com/urfave/cli"
 )
 
@@ -189,15 +190,63 @@ var (
 		},
 		{
 			Name:  "model",
-			Usage: "generate sql model",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "config, c",
-					Usage: "the file that contains main function",
-				},
-				cli.StringFlag{
-					Name:  "dir, d",
-					Usage: "the target dir",
+			Usage: "generate model code",
+			Subcommands: []cli.Command{
+				{
+					Name:  "mysql",
+					Usage: `generate mysql model`,
+					Subcommands: []cli.Command{
+						{
+							Name:  "ddl",
+							Usage: `generate mysql model from ddl`,
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "src, s",
+									Usage: "the file path of the ddl source file",
+								},
+								cli.StringFlag{
+									Name:  "dir, d",
+									Usage: "the target dir",
+								},
+								cli.BoolFlag{
+									Name:  "cache, c",
+									Usage: "generate code with cache [optional]",
+								},
+								cli.BoolFlag{
+									Name:  "idea",
+									Usage: "for idea plugin [optional]",
+								},
+							},
+							Action: command.MysqlDDL,
+						},
+						{
+							Name:  "datasource",
+							Usage: `generate model from datasource`,
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "url",
+									Usage: `the data source of database,like "root:password@tcp(127.0.0.1:3306)/database`,
+								},
+								cli.StringFlag{
+									Name:  "table, t",
+									Usage: `source table,tables separated by commas,like "user,course`,
+								},
+								cli.BoolFlag{
+									Name:  "cache, c",
+									Usage: "generate code with cache [optional]",
+								},
+								cli.StringFlag{
+									Name:  "dir, d",
+									Usage: "the target dir",
+								},
+								cli.BoolFlag{
+									Name:  "idea",
+									Usage: "for idea plugin [optional]",
+								},
+							},
+							Action: command.MyDataSource,
+						},
+					},
 				},
 			},
 		},
