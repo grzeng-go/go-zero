@@ -12,7 +12,6 @@ import (
 	"github.com/tal-tech/go-zero/tools/goctl/util"
 	"github.com/tal-tech/go-zero/tools/goctl/util/console"
 	"github.com/tal-tech/go-zero/tools/goctl/util/stringx"
-	"github.com/tal-tech/go-zero/tools/goctl/util/templatex"
 )
 
 const (
@@ -119,7 +118,7 @@ type (
 )
 
 func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, error) {
-	t := templatex.With("model").
+	t := util.With("model").
 		Parse(template.Model).
 		GoFmt(true)
 
@@ -172,7 +171,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		"types":   typesCode,
 		"new":     newCode,
 		"insert":  insertCode,
-		"find":    strings.Join(findCode, "\r\n"),
+		"find":    strings.Join(findCode, "\n"),
 		"update":  updateCode,
 		"delete":  deleteCode,
 	})
