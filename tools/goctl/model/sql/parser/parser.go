@@ -16,24 +16,30 @@ const (
 	spatial
 )
 
+const timeImport = "time.Time"
+
 type (
 	Table struct {
 		Name       stringx.String
 		PrimaryKey Primary
 		Fields     []Field
 	}
+
 	Primary struct {
 		Field
 		AutoIncrement bool
 	}
+
 	Field struct {
 		Name         stringx.String
 		DataBaseType string
 		DataType     string
 		IsKey        bool
 		IsPrimaryKey bool
+		IsUniqueKey  bool
 		Comment      string
 	}
+
 	KeyType int
 )
 
@@ -119,6 +125,7 @@ func Parse(ddl string) (*Table, error) {
 		if ok {
 			field.IsKey = true
 			field.IsPrimaryKey = key == primary
+			field.IsUniqueKey = key == unique
 			if field.IsPrimaryKey {
 				primaryKey.Field = field
 				if column.Type.Autoincrement {
@@ -134,4 +141,13 @@ func Parse(ddl string) (*Table, error) {
 		PrimaryKey: primaryKey,
 		Fields:     fields,
 	}, nil
+}
+
+func (t *Table) ContainsTime() bool {
+	for _, item := range t.Fields {
+		if item.DataType == timeImport {
+			return true
+		}
+	}
+	return false
 }

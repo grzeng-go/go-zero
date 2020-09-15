@@ -1,5 +1,7 @@
 # go-zero
 
+[English](readme-en.md) | 简体中文
+
 [![Go](https://github.com/tal-tech/go-zero/workflows/Go/badge.svg?branch=master)](https://github.com/tal-tech/go-zero/actions)
 [![codecov](https://codecov.io/gh/tal-tech/go-zero/branch/master/graph/badge.svg)](https://codecov.io/gh/tal-tech/go-zero)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tal-tech/go-zero)](https://goreportcard.com/report/github.com/tal-tech/go-zero)
@@ -91,101 +93,55 @@ go get -u github.com/tal-tech/go-zero
 
 0. 完整示例请查看
 
-   [快速构建高并发微服务](doc/shorturl.md)
+    [快速构建高并发微服务](doc/shorturl.md)
+
+    [快速构建高并发微服务-多RPC版](doc/bookstore.md)
 
 1. 安装goctl工具
 
+   `goctl`读作`go control`，不要读成`go C-T-L`。`goctl`的意思是不要被代码控制，而是要去控制它。其中的`go`不是指`golang`。在设计`goctl`之初，我就希望通过`她`来解放我们的双手👈
+
    ```shell
-   export GO111MODULE=on export GOPROXY=https://goproxy.cn/,direct go get github.com/tal-tech/go-zero/tools/goctl
+   GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/tal-tech/go-zero/tools/goctl
    ```
 
    确保goctl可执行
 
-2. 定义API文件，比如greet.api，可以在vs code里安装`goctl`插件，支持api语法
-
-   ```go
-   type Request struct {
-     Name string `path:"name,options=you|me"` // 框架自动验证请求参数是否合法
-   }
-   
-   type Response struct {
-     Message string `json:"message"`
-   }
-   
-   service greet-api {
-     @server(
-       handler: GreetHandler
-     )
-     get /greet/from/:name(Request) returns (Response);
-   }
-   ```
-
-   也可以通过goctl生成api模本文件，命令如下：
+2. 快速生成api服务
 
    ```shell
-   goctl api -o greet.api
+      goctl api new greet
+      cd greet
+      go run greet.go -f etc/greet-api.yaml
    ```
 
-3. 生成go服务端代码
+      默认侦听在8888端口（可以在配置文件里修改），可以通过curl请求：
 
    ```shell
-   goctl api go -api greet.api -dir greet
+      curl -i http://localhost:8888/greet/from/you
    ```
 
-   生成的文件结构如下：
+      返回如下：
 
+   ```http
+      HTTP/1.1 200 OK
+      Date: Sun, 30 Aug 2020 15:32:35 GMT
+      Content-Length: 0
    ```
-   ├── greet
-   │   ├── etc
-   │   │   └── greet-api.yaml        // 配置文件
-   │   ├── greet.go                  // main文件
-   │   └── internal
-   │       ├── config
-   │       │   └── config.go         // 配置定义
-   │       ├── handler
-   │       │   ├── greethandler.go   // get/put/post/delete等路由定义文件
-   │       │   └── routes.go         // 路由列表
-   │       ├── logic
-   │       │   └── greetlogic.go     // 请求逻辑处理文件
-   │       ├── svc
-   │       │   └── servicecontext.go // 请求上下文，可以传入mysql, redis等依赖
-   │       └── types
-   │           └── types.go          // 请求、返回等类型定义
-   └── greet.api                     // api描述文件
-   ```
-   生成的代码可以直接运行：
 
-```shell
-   cd greet
-   go run greet.go -f etc/greet-api.yaml
-```
+      编写业务代码：
 
-默认侦听在8888端口（可以在配置文件里修改），可以通过curl请求：
+      * api文件定义了服务对外暴露的路由，可参考[api规范](https://github.com/tal-tech/go-zero/blob/master/doc/goctl.md)
+      * 可以在servicecontext.go里面传递依赖给logic，比如mysql, redis等
+      * 在api定义的get/post/put/delete等请求对应的logic里增加业务处理逻辑
 
-```shell
-curl -i http://localhost:8888/greet/from/you
-```
+3. 可以根据api文件生成前端需要的Java, TypeScript, Dart, JavaScript代码
 
-返回如下：
-
-```http
-HTTP/1.1 200 OK
-Date: Sun, 30 Aug 2020 15:32:35 GMT
-Content-Length: 0
-```
-
-编写业务代码：
-
-* 可以在servicecontext.go里面传递依赖给logic，比如mysql, redis等
-   * 在api定义的get/post/put/delete等请求对应的logic里增加业务处理逻辑
-   
-4. 可以根据api文件生成前端需要的Java, TypeScript, Dart, JavaScript代码
-
-   ```shell
-   goctl api java -api greet.api -dir greet
-   goctl api dart -api greet.api -dir greet
-   ...
-   ```
+      ```shell
+      goctl api java -api greet.api -dir greet
+      goctl api dart -api greet.api -dir greet
+      ...
+      ```
 
 ## 7. Benchmark
 
@@ -196,9 +152,13 @@ Content-Length: 0
 ## 8. 文档 (逐步完善中)
 
 * [快速构建高并发微服务](doc/shorturl.md)
+* [快速构建高并发微服务-多RPC版](doc/bookstore.md)
 * [goctl使用帮助](doc/goctl.md)
+* [通过MapReduce降低服务响应时间](doc/mapreduce.md)
 * [关键字替换和敏感词过滤工具](doc/keywords.md)
+* [进程内缓存使用方法](doc/collection.md)
+* [基于prometheus的微服务指标监控](doc/metric.md)
 
 ## 9. 微信交流群
 
-添加我的微信：kevwan，请注明go-zero，我拉进go-zero社区群🤝
+<img src="doc/images/wechat.jpg" alt="wechat" width="300" />

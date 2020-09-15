@@ -1,6 +1,8 @@
 # 快速构建高并发微服务
 
-## 0. 为什么说做好微服务很难？
+[English](shorturl-en.md) | 简体中文
+
+## 0. 为什么说做好微服务很难
 
 要想做好微服务，我们需要理解和掌握的知识点非常多，从几个维度上来说：
 
@@ -23,7 +25,7 @@
 
 下面我通过短链微服务来演示通过[go-zero](https://github.com/tal-tech/go-zero)快速的创建微服务的流程，走完一遍，你就会发现：原来编写微服务如此简单！
 
-## 1. 什么是短链服务？
+## 1. 什么是短链服务
 
 短链服务就是将长的URL网址，通过程序计算等方式，转换为简短的网址字符串。
 
@@ -61,7 +63,7 @@
 * 安装goctl工具
 
   ```shell
-  GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get github.com/tal-tech/go-zero/tools/goctl
+  GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/tal-tech/go-zero/tools/goctl
   ```
 
 * 创建工作目录`shorturl`
@@ -121,7 +123,7 @@
 
   生成的文件结构如下：
 
-  ```
+  ```Plain Text
   .
   ├── api
   │   ├── etc
@@ -226,7 +228,7 @@
 
   文件结构如下：
 
-  ```
+  ```Plain Text
   rpc/transform
   ├── etc
   │   └── transform.yaml              // 配置文件
@@ -287,13 +289,13 @@
   ```go
   type ServiceContext struct {
   	Config    config.Config
-  	Transformer rpcx.Client                               // 手动代码
+  	Transformer transformer.Transformer                                          // 手动代码
   }
   
   func NewServiceContext(c config.Config) *ServiceContext {
   	return &ServiceContext{
   		Config:    c,
-  		Transformer: rpcx.MustNewClient(c.Transform),  // 手动代码
+      Transformer: transformer.NewTransformer(rpcx.MustNewClient(c.Transform)),  // 手动代码
   	}
   }
   ```
@@ -305,8 +307,7 @@
   ```go
   func (l *ExpandLogic) Expand(req types.ExpandReq) (*types.ExpandResp, error) {
     // 手动代码开始
-    trans := transformer.NewTransformer(l.svcCtx.Transformer)
-  	resp, err := trans.Expand(l.ctx, &transformer.ExpandReq{
+  	resp, err := l.svcCtx.Transformer.Expand(l.ctx, &transformer.ExpandReq{
   		Shorten: req.Shorten,
   	})
   	if err != nil {
@@ -320,15 +321,14 @@
   }
   ```
 
-  通过调用`transformer`的`Expand`方法实现短链恢复到url
+通过调用`transformer`的`Expand`方法实现短链恢复到url
 
 * 修改`internal/logic/shortenlogic.go`，如下：
 
   ```go
   func (l *ShortenLogic) Shorten(req types.ShortenReq) (*types.ShortenResp, error) {
     // 手动代码开始
-  	trans := transformer.NewTransformer(l.svcCtx.Transformer)
-  	resp, err := trans.Shorten(l.ctx, &transformer.ShortenReq{
+  	resp, err := l.svcCtx.Transformer.Shorten(l.ctx, &transformer.ShortenReq{
   		Url: req.Url,
   	})
   	if err != nil {
@@ -342,9 +342,9 @@
   }
   ```
 
-  通过调用`transformer`的`Shorten`方法实现url到短链的变换
+通过调用`transformer`的`Shorten`方法实现url到短链的变换
 
-  至此，API Gateway修改完成，虽然贴的代码多，但是期中修改的是很少的一部分，为了方便理解上下文，我贴了完整代码，接下来处理CRUD+cache
+至此，API Gateway修改完成，虽然贴的代码多，但是期中修改的是很少的一部分，为了方便理解上下文，我贴了完整代码，接下来处理CRUD+cache
 
 ## 8. 定义数据库表结构，并生成CRUD+cache代码
 
@@ -381,7 +381,7 @@
 
   生成后的文件结构如下：
 
-  ```
+  ```Plain Text
   rpc/transform/model
   ├── shorturl.sql
   ├── shorturlmodel.go              // CRUD+cache代码
@@ -433,7 +433,7 @@
 * 修改`rpc/transform/internal/logic/expandlogic.go`，如下：
 
   ```go
-  func (l *ExpandLogic) Expand(in *expand.ExpandReq) (*expand.ExpandResp, error) {
+  func (l *ExpandLogic) Expand(in *transform.ExpandReq) (*transform.ExpandResp, error) {
   	// 手动代码开始
   	res, err := l.svcCtx.Model.FindOne(in.Shorten)
   	if err != nil {
@@ -450,7 +450,7 @@
 * 修改`rpc/shorten/internal/logic/shortenlogic.go`，如下：
 
   ```go
-  func (l *ShortenLogic) Shorten(in *shorten.ShortenReq) (*shorten.ShortenResp, error) {
+  func (l *ShortenLogic) Shorten(in *transform.ShortenReq) (*transform.ShortenResp, error) {
     // 手动代码开始，生成短链接
   	key := hash.Md5Hex([]byte(in.Url))[:6]
   	_, err := l.svcCtx.Model.Insert(model.Shorturl{
@@ -514,6 +514,10 @@
 
 可以看出在我的MacBook Pro上能达到3万+的qps。
 
+## 12. 完整代码
+
+[https://github.com/tal-tech/go-zero/tree/master/example/shorturl](https://github.com/tal-tech/go-zero/tree/master/example/shorturl)
+
 ## 12. 总结
 
 我们一直强调**工具大于约定和文档**。
@@ -525,4 +529,3 @@ go-zero不只是一个框架，更是一个建立在框架+工具基础上的，
 通过go-zero+goctl生成的代码，包含了微服务治理的各种组件，包括：并发控制、自适应熔断、自适应降载、自动缓存控制等，可以轻松部署以承载巨大访问量。
 
 有任何好的提升工程效率的想法，随时欢迎交流！👏
-

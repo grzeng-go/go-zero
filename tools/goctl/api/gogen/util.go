@@ -4,8 +4,6 @@ import (
 	"fmt"
 	goformat "go/format"
 	"io"
-	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -13,32 +11,27 @@ import (
 	"github.com/tal-tech/go-zero/tools/goctl/api/spec"
 	"github.com/tal-tech/go-zero/tools/goctl/api/util"
 	goctlutil "github.com/tal-tech/go-zero/tools/goctl/util"
+	"github.com/tal-tech/go-zero/tools/goctl/util/project"
 )
 
 func getParentPackage(dir string) (string, error) {
-	absDir, err := filepath.Abs(dir)
+	p, err := project.Prepare(dir, false)
 	if err != nil {
 		return "", err
 	}
 
-	absDir = strings.ReplaceAll(absDir, `\`, `/`)
-	rootPath, hasGoMod := goctlutil.FindGoModPath(dir)
-	if hasGoMod {
-		return rootPath, nil
+	if len(p.GoMod.Path) > 0 {
+		goModePath := filepath.Clean(filepath.Dir(p.GoMod.Path))
+		absPath, err := filepath.Abs(dir)
+		if err != nil {
+			return "", err
+		}
+		parent := filepath.Clean(goctlutil.JoinPackages(p.GoMod.Module, absPath[len(goModePath):]))
+		parent = strings.ReplaceAll(parent, "\\", "/")
+		return parent, nil
 	}
 
-	gopath := os.Getenv("GOPATH")
-	parent := path.Join(gopath, "src")
-	pos := strings.Index(absDir, parent)
-	if pos < 0 {
-		fmt.Printf("%s not in go.mod project path, or not in GOPATH of %s directory\n", absDir, gopath)
-		tempPath := filepath.Dir(absDir)
-		rootPath = absDir[len(tempPath)+1:]
-	} else {
-		rootPath = absDir[len(parent)+1:]
-	}
-
-	return rootPath, nil
+	return p.Package, nil
 }
 
 func writeIndent(writer io.Writer, indent int) {
