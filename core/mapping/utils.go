@@ -53,6 +53,7 @@ func Deref(t reflect.Type) reflect.Type {
 	return t
 }
 
+// 将任意对象转换成字符串类型
 func Repr(v interface{}) string {
 	if v == nil {
 		return ""
