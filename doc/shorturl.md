@@ -31,7 +31,7 @@
 
 ## 2. 短链微服务架构图
 
-<img src="images/shorturl-arch.png" alt="架构图" width="800" />
+  ![](images/shorturl-arch.png)
 
 * 这里只用了`Transform RPC`一个微服务，并不是说API Gateway只能调用一个微服务，只是为了最简演示API Gateway如何调用RPC微服务而已
 * 在真正项目里要尽可能每个微服务使用自己的数据库，数据边界要清晰
@@ -42,15 +42,15 @@
 
 * API Gateway
 
-  <img src="images/shorturl-api.png" alt="api" width="800" />
+  ![](images/shorturl-api.png)
 
 * RPC
 
-  <img src="images/shorturl-rpc.png" alt="架构图" width="800" />
+  ![](images/shorturl-rpc.png)
 
 * model
 
-  <img src="images/shorturl-model.png" alt="model" width="800" />
+  ![](images/shorturl-model.png)
 
 下面我们来一起完整走一遍快速构建微服务的流程，Let’s `Go`!🏃‍♂️
 
