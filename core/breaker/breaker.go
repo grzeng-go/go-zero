@@ -30,8 +30,10 @@ type (
 	State      = int32
 	Acceptable func(err error) bool
 
+	// 断路器
 	Breaker interface {
 		// Name returns the name of the netflixBreaker.
+		// 返回断路器的名称
 		Name() string
 
 		// Allow checks if the request is allowed.
@@ -175,6 +177,7 @@ func (lt loggedThrottle) doReq(req func() error, fallback func(err error) error,
 	}))
 }
 
+// 如果是断路器异常，则打印异常日志
 func (lt loggedThrottle) logError(err error) error {
 	if err == ErrServiceUnavailable {
 		// if circuit open, not possible to have empty error window
@@ -186,6 +189,7 @@ func (lt loggedThrottle) logError(err error) error {
 	return err
 }
 
+// 错误窗口，记录错误信息
 type errorWindow struct {
 	reasons [numHistoryReasons]string
 	index   int
@@ -193,6 +197,7 @@ type errorWindow struct {
 	lock    sync.Mutex
 }
 
+// 添加错误信息，最多记录5个错误，超出后覆盖之前的错误信息
 func (ew *errorWindow) add(reason string) {
 	ew.lock.Lock()
 	ew.reasons[ew.index] = fmt.Sprintf("%s %s", time.Now().Format(timeFormat), reason)
@@ -201,6 +206,7 @@ func (ew *errorWindow) add(reason string) {
 	ew.lock.Unlock()
 }
 
+// 输出错误信息
 func (ew *errorWindow) String() string {
 	var builder strings.Builder
 

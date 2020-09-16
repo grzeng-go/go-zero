@@ -4,6 +4,7 @@ import "strings"
 
 const keySeparator = ","
 
+// 计算ClusterConf的总权重
 func TotalWeights(c []NodeConf) int {
 	var weights int
 
@@ -17,6 +18,7 @@ func TotalWeights(c []NodeConf) int {
 	return weights
 }
 
+// 将keys转换成以逗号间隔的字符串
 func formatKeys(keys []string) string {
 	return strings.Join(keys, keySeparator)
 }

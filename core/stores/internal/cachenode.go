@@ -17,6 +17,7 @@ import (
 
 const (
 	notFoundPlaceholder = "*"
+	// 缓存时间误差区间，为了避免同一时间大量缓存同时到期;
 	// make the expiry unstable to avoid lots of cached items expire at the same time
 	// make the unstable expiry to be [0.95, 1.05] * seconds
 	expiryDeviation = 0.05

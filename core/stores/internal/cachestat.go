@@ -9,6 +9,7 @@ import (
 
 const statInterval = time.Minute
 
+// 缓存状态，用于记录缓存命中、未命中及DB请求失败的次数
 type CacheStat struct {
 	name string
 	// export the fields to let the unit tests working,
@@ -44,6 +45,7 @@ func (cs *CacheStat) IncrementDbFails() {
 	atomic.AddUint64(&cs.DbFails, 1)
 }
 
+// 循环统计，间隔为1分钟
 func (cs *CacheStat) statLoop() {
 	ticker := time.NewTicker(statInterval)
 	defer ticker.Stop()
