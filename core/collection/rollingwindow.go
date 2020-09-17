@@ -10,6 +10,7 @@ import (
 type (
 	RollingWindowOption func(rollingWindow *RollingWindow)
 
+	// 移动窗口，用于统计数据
 	RollingWindow struct {
 		lock          sync.RWMutex
 		size          int
@@ -59,8 +60,11 @@ func (rw *RollingWindow) Reduce(fn func(b *Bucket)) {
 	}
 }
 
+// 根据当前时间与最后更新时间计算偏移量
 func (rw *RollingWindow) span() int {
+	// 根据lastTime与当前时间的差值除于interval间隔，得到当前偏移量
 	offset := int(timex.Since(rw.lastTime) / rw.interval)
+	// 如果偏移量在[0, size)之间，则直接返回该值，否则返回size
 	if 0 <= offset && offset < rw.size {
 		return offset
 	} else {
@@ -68,11 +72,14 @@ func (rw *RollingWindow) span() int {
 	}
 }
 
+// 基于时间更新偏移量
 func (rw *RollingWindow) updateOffset() {
+	// 获取当前偏移量
 	span := rw.span()
 	if span > 0 {
 		offset := rw.offset
 		// reset expired buckets
+		// 重置过期的桶
 		start := offset + 1
 		steps := start + span
 		var remainder int
