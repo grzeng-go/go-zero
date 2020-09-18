@@ -145,6 +145,7 @@ func defaultAcceptable(err error) bool {
 	return err == nil
 }
 
+// 为熔断器增加了一层输出日志的包装
 type loggedThrottle struct {
 	name string
 	internalThrottle
