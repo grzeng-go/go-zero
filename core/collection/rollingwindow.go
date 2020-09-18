@@ -38,7 +38,9 @@ func NewRollingWindow(size int, interval time.Duration, opts ...RollingWindowOpt
 func (rw *RollingWindow) Add(v float64) {
 	rw.lock.Lock()
 	defer rw.lock.Unlock()
+	// 根据时间重置桶及偏离量
 	rw.updateOffset()
+	// 根据重置后的偏移量添加当前值
 	rw.win.add(rw.offset, v)
 }
 
@@ -47,20 +49,23 @@ func (rw *RollingWindow) Reduce(fn func(b *Bucket)) {
 	defer rw.lock.RUnlock()
 
 	var diff int
+	// 获取
 	span := rw.span()
 	// ignore current bucket, because of partial data
+	//
 	if span == 0 && rw.ignoreCurrent {
 		diff = rw.size - 1
 	} else {
 		diff = rw.size - span
 	}
 	if diff > 0 {
+		// rw.offset（之前的偏移量） + span（新增的偏移量） + 1，即为要开始处理的位置
 		offset := (rw.offset + span + 1) % rw.size
 		rw.win.reduce(offset, diff, fn)
 	}
 }
 
-// 根据当前时间与最后更新时间计算偏移量
+// 根据当前时间与最后更新时间计算偏移的增量
 func (rw *RollingWindow) span() int {
 	// 根据lastTime与当前时间的差值除于interval间隔，得到当前偏移量
 	offset := int(timex.Since(rw.lastTime) / rw.interval)
@@ -74,14 +79,17 @@ func (rw *RollingWindow) span() int {
 
 // 基于时间更新偏移量
 func (rw *RollingWindow) updateOffset() {
-	// 获取当前偏移量
+	// 获取当前偏移的增量
 	span := rw.span()
 	if span > 0 {
 		offset := rw.offset
 		// reset expired buckets
 		// 重置过期的桶
+		// 计算起始的位置
 		start := offset + 1
+		// 起始位置加上偏移增量，即为要重置的终点位置
 		steps := start + span
+		// 桶数量初始化时就设定好，当前偏移量，如果超出最大值，则从最开始处进行覆盖重置
 		var remainder int
 		if steps > rw.size {
 			remainder = steps - rw.size
@@ -95,6 +103,7 @@ func (rw *RollingWindow) updateOffset() {
 			rw.win.resetBucket(i)
 			offset = i
 		}
+		// 重新设置当前偏移量及最后更新时间
 		rw.offset = offset
 		rw.lastTime = timex.Now()
 	}
@@ -105,11 +114,13 @@ type Bucket struct {
 	Count int64
 }
 
+// sum累加值;count计数
 func (b *Bucket) add(v float64) {
 	b.Sum += v
 	b.Count++
 }
 
+// 重置sum和count
 func (b *Bucket) reset() {
 	b.Sum = 0
 	b.Count = 0
@@ -131,16 +142,19 @@ func newWindow(size int) *window {
 	}
 }
 
+// 根据offset确定桶的位置，并累加v
 func (w *window) add(offset int, v float64) {
 	w.buckets[offset%w.size].add(v)
 }
 
+// 对[start, start+count)区间的桶进行fn操作
 func (w *window) reduce(start, count int, fn func(b *Bucket)) {
 	for i := 0; i < count; i++ {
 		fn(w.buckets[(start+i)%len(w.buckets)])
 	}
 }
 
+// 根据offset重置桶
 func (w *window) resetBucket(offset int) {
 	w.buckets[offset].reset()
 }
