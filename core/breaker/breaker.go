@@ -216,6 +216,7 @@ func (ew *errorWindow) String() string {
 	for i := ew.index - 1; i >= ew.index-ew.count; i-- {
 		reasons = append(reasons, ew.reasons[(i+numHistoryReasons)%numHistoryReasons])
 	}
+
 	ew.lock.Unlock()
 
 	return strings.Join(reasons, "\n")

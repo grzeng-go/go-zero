@@ -26,6 +26,10 @@ const (
 // indicates there is no such value associate with the key
 var errPlaceholder = errors.New("placeholder")
 
+// 缓存穿透：恶意查询一个必定不存在的key，导致大量请求直接访问DB
+// 缓存击穿：某些热点key超时失效，导致同一时间有大量请求访问DB
+// 缓存雪崩：大量key同一时刻失效，导致DB压力大增
+// cacheNode采取了布隆过滤器防止缓存穿透，过期时间在某个区间范围内随机防止缓存雪崩，通过SharedCalls让同一时间请求同一个服务的请求共享结果防止了缓存击穿
 type cacheNode struct {
 	rds            *redis.Redis
 	expiry         time.Duration
@@ -112,6 +116,7 @@ func (c cacheNode) aroundDuration(duration time.Duration) time.Duration {
 	return c.unstableExpiry.AroundDuration(duration)
 }
 
+//
 func (c cacheNode) asyncRetryDelCache(keys ...string) {
 	AddCleanTask(func() error {
 		_, err := c.rds.Del(keys...)
