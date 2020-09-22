@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/tal-tech/go-zero/core/discov"
 	"github.com/tal-tech/go-zero/example/rpc/remote/stream"
@@ -33,6 +34,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var wg sync.WaitGroup
 	go func() {
 		for {
 			resp, err := stm.Recv()
@@ -41,10 +43,12 @@ func main() {
 			}
 
 			fmt.Println("=>", resp.Greet)
+			wg.Done()
 		}
 	}()
 
 	for i := 0; i < 3; i++ {
+		wg.Add(1)
 		fmt.Println("<=", name)
 		if err = stm.Send(&stream.StreamReq{
 			Name: name,
@@ -52,4 +56,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+
+	wg.Wait()
 }
