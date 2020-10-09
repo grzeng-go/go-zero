@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/tal-tech/go-zero/core/stores/cache"
-	"github.com/tal-tech/go-zero/core/stores/internal"
 	"github.com/tal-tech/go-zero/core/stores/redis"
 	"github.com/tal-tech/go-zero/core/stores/sqlx"
 	"github.com/tal-tech/go-zero/core/syncx"
@@ -19,7 +18,7 @@ var (
 
 	// can't use one SharedCalls per conn, because multiple conns may share the same cache key.
 	exclusiveCalls = syncx.NewSharedCalls()
-	stats          = internal.NewCacheStat("sqlc")
+	stats          = cache.NewCacheStat("sqlc")
 )
 
 type (
@@ -30,21 +29,21 @@ type (
 
 	CachedConn struct {
 		db    sqlx.SqlConn
-		cache internal.Cache
+		cache cache.Cache
 	}
 )
 
 func NewNodeConn(db sqlx.SqlConn, rds *redis.Redis, opts ...cache.Option) CachedConn {
 	return CachedConn{
 		db:    db,
-		cache: internal.NewCacheNode(rds, exclusiveCalls, stats, sql.ErrNoRows, opts...),
+		cache: cache.NewCacheNode(rds, exclusiveCalls, stats, sql.ErrNoRows, opts...),
 	}
 }
 
 func NewConn(db sqlx.SqlConn, c cache.CacheConf, opts ...cache.Option) CachedConn {
 	return CachedConn{
 		db:    db,
-		cache: internal.NewCache(c, exclusiveCalls, stats, sql.ErrNoRows, opts...),
+		cache: cache.NewCache(c, exclusiveCalls, stats, sql.ErrNoRows, opts...),
 	}
 }
 
@@ -83,6 +82,11 @@ func (cc CachedConn) QueryRowIndex(v interface{}, key string, keyer func(primary
 	indexQuery IndexQueryFn, primaryQuery PrimaryQueryFn) error {
 	var primaryKey interface{}
 	var found bool
+
+	// if don't use convert numeric primary key into int64,
+	// then it will be represented as scientific notion, like 2e6
+	// which will make the cache doesn't match with the previous insert one
+	keyer = floatKeyer(keyer)
 	if err := cc.cache.TakeWithExpire(&primaryKey, key, func(val interface{}, expire time.Duration) (err error) {
 		primaryKey, err = indexQuery(cc.db, v)
 		if err != nil {
@@ -119,4 +123,17 @@ func (cc CachedConn) SetCache(key string, v interface{}) error {
 
 func (cc CachedConn) Transact(fn func(sqlx.Session) error) error {
 	return cc.db.Transact(fn)
+}
+
+func floatKeyer(fn func(interface{}) string) func(interface{}) string {
+	return func(primary interface{}) string {
+		switch v := primary.(type) {
+		case float32:
+			return fn(int64(v))
+		case float64:
+			return fn(int64(v))
+		default:
+			return fn(primary)
+		}
+	}
 }

@@ -1,4 +1,4 @@
-package internal
+package cache
 
 import (
 	"encoding/json"
@@ -111,6 +111,45 @@ func TestCache_SetDel(t *testing.T) {
 		assert.Nil(t, c.GetCache(fmt.Sprintf("key/%d", i), &v))
 		assert.Equal(t, i, v)
 	}
+	assert.Nil(t, c.DelCache())
+	for i := 0; i < total; i++ {
+		assert.Nil(t, c.DelCache(fmt.Sprintf("key/%d", i)))
+	}
+	for i := 0; i < total; i++ {
+		var v int
+		assert.Equal(t, errPlaceholder, c.GetCache(fmt.Sprintf("key/%d", i), &v))
+		assert.Equal(t, 0, v)
+	}
+}
+
+func TestCache_OneNode(t *testing.T) {
+	const total = 1000
+	r := miniredis.NewMiniRedis()
+	assert.Nil(t, r.Start())
+	defer r.Close()
+	conf := ClusterConf{
+		{
+			RedisConf: redis.RedisConf{
+				Host: r.Addr(),
+				Type: redis.NodeType,
+			},
+			Weight: 100,
+		},
+	}
+	c := NewCache(conf, syncx.NewSharedCalls(), NewCacheStat("mock"), errPlaceholder)
+	for i := 0; i < total; i++ {
+		if i%2 == 0 {
+			assert.Nil(t, c.SetCache(fmt.Sprintf("key/%d", i), i))
+		} else {
+			assert.Nil(t, c.SetCacheWithExpire(fmt.Sprintf("key/%d", i), i, 0))
+		}
+	}
+	for i := 0; i < total; i++ {
+		var v int
+		assert.Nil(t, c.GetCache(fmt.Sprintf("key/%d", i), &v))
+		assert.Equal(t, i, v)
+	}
+	assert.Nil(t, c.DelCache())
 	for i := 0; i < total; i++ {
 		assert.Nil(t, c.DelCache(fmt.Sprintf("key/%d", i)))
 	}
@@ -186,6 +225,25 @@ func TestCache_Balance(t *testing.T) {
 		assert.Equal(t, i, val)
 	}
 	assert.Equal(t, total/10, count)
+}
+
+func TestCacheNoNode(t *testing.T) {
+	dispatcher := hash.NewConsistentHash()
+	c := cacheCluster{
+		dispatcher:  dispatcher,
+		errNotFound: errPlaceholder,
+	}
+	assert.NotNil(t, c.DelCache("foo"))
+	assert.NotNil(t, c.DelCache("foo", "bar", "any"))
+	assert.NotNil(t, c.GetCache("foo", nil))
+	assert.NotNil(t, c.SetCache("foo", nil))
+	assert.NotNil(t, c.SetCacheWithExpire("foo", nil, time.Second))
+	assert.NotNil(t, c.Take(nil, "foo", func(v interface{}) error {
+		return nil
+	}))
+	assert.NotNil(t, c.TakeWithExpire(nil, "foo", func(v interface{}, duration time.Duration) error {
+		return nil
+	}))
 }
 
 func calcEntropy(m map[int]int, total int) float64 {

@@ -2,7 +2,6 @@ package breaker
 
 import (
 	"math"
-	"sync/atomic"
 	"time"
 
 	"github.com/tal-tech/go-zero/core/collection"
@@ -24,7 +23,7 @@ type googleBreaker struct {
 	// 阈值，用于计算max(0, (request - k * accept)/request + 1)，K越大表示能容忍的异常请求越大
 	k float64
 	// 熔断器状态  0为关闭；1为开启 当熔断器开启时，则表示当前服务异常
-	state int32
+	//state int32
 	// rollingWindow用来保存，过去10s时间内发生的所有请求及成功的请求
 	stat *collection.RollingWindow
 	// 概率通过，当熔断时，通过该工具类实现，放一小部分流量进行访问后端，其他一概拒绝请求
@@ -37,7 +36,7 @@ func newGoogleBreaker() *googleBreaker {
 	return &googleBreaker{
 		stat:  st,
 		k:     k,
-		state: StateClosed,
+		//state: StateClosed,
 		proba: mathx.NewProba(),
 	}
 }
@@ -53,18 +52,15 @@ func (b *googleBreaker) accept() error {
 	dropRatio := math.Max(0, (float64(total-protection)-weightedAccepts)/float64(total+1))
 	// 当拒绝概率小于等于0时，如果熔断器为开启状态，则将其关闭，然后返回
 	if dropRatio <= 0 {
-		if atomic.LoadInt32(&b.state) == StateOpen {
+		/*if atomic.LoadInt32(&b.state) == StateOpen {
 			atomic.CompareAndSwapInt32(&b.state, StateOpen, StateClosed)
-		}
+		}*/
 		return nil
 	}
 
-	// 如果拒绝概率大于0，如果熔断器为关闭状态，则开启
-	if atomic.LoadInt32(&b.state) == StateClosed {
+	/*if atomic.LoadInt32(&b.state) == StateClosed {
 		atomic.CompareAndSwapInt32(&b.state, StateClosed, StateOpen)
-	}
-
-	// 通过proba,放行一小部分流量进行试探，以便在服务正常后，能自动关闭熔断器，放行的流量以拒绝率成反比，拒绝率越高，放行的越少
+	}*/
 	if b.proba.TrueOnProba(dropRatio) {
 		return ErrServiceUnavailable
 	}
