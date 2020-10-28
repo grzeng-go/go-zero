@@ -1,3 +1,5 @@
+<img align="right" width="150px" src="https://raw.githubusercontent.com/tal-tech/zero-doc/main/doc/images/go-zero.png">
+
 # go-zero
 
 English | [简体中文](readme.md)
@@ -164,6 +166,8 @@ go get -u github.com/tal-tech/go-zero
 
    ```shell
    cd greet
+   go mod init
+   go mod tidy
    go run greet.go -f etc/greet-api.yaml
    ```
 
