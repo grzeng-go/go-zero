@@ -25,6 +25,8 @@ func NewSafeMap() *SafeMap {
 	}
 }
 
+// map超过100万个元素时，很容易出现OOM错误，为了避免出现这种状态
+// 在删除次数超过1万并且map超过1千时，就将dirtyOld及dirtyNew的所有元素都加入dirtyNew中，并将其赋予dirtyOld，并重新创建一个dirtyNew对象
 func (m *SafeMap) Del(key interface{}) {
 	m.lock.Lock()
 	if _, ok := m.dirtyOld[key]; ok {
