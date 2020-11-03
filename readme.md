@@ -16,6 +16,8 @@ go-zero 是一个集成了各种工程实践的 web 和 rpc 框架。通过弹�
 
 go-zero 包含极简的 API 定义和生成工具 goctl，可以根据定义的 api 文件一键生成 Go, iOS, Android, Kotlin, Dart, TypeScript, JavaScript 代码，并可直接运行。
 
+看着觉得不错的，烦请 **Star**
+
 使用 go-zero 的好处：
 
 * 轻松获得支撑千万日活服务的稳定性
@@ -170,24 +172,22 @@ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/tal-tech/
   * [文本序列化和反序列化](https://github.com/tal-tech/zero-doc/blob/main/doc/mapping.md)
   * [快速构建 jwt 鉴权认证](https://github.com/tal-tech/zero-doc/blob/main/doc/jwt.md)
 
-## 9. 微信交流群
-
-加群之前有劳给一个 star，一个小小的 star 是作者们回答海量问题的动力。
+## 8. 微信交流群
 
 如果文档中未能覆盖的任何疑问，欢迎您在群里提出，我们会尽快答复。
 
 您可以在群内提出使用中需要改进的地方，我们会考虑合理性并尽快修改。
 
-如果您发现 bug 请及时提 issue，我们会尽快确认并修改。
+如果您发现 ***bug*** 请及时提 ***issue***，我们会尽快确认并修改。
 
-<!-- 扫码后请加群主，便于我邀请您进讨论群，并请退出扫码网关群，谢谢！-->
+为了防止广告用户、识别技术同行，请 ***star*** 后加我时注明 **github** 当前 ***star*** 数，我再拉进 **go-zero** 群，感谢！
 
-开源中国年度评选，给go-zero投上一票：[https://www.oschina.net/p/go-zero](https://www.oschina.net/p/go-zero)
+加我之前有劳点一下 ***star***，一个小小的 ***star*** 是作者们回答海量问题的动力🤝
 
-为了防止广告用户，请加我微信，我再拉进go-zero群。
+<img src="https://gitee.com/kevwan/static/raw/master/images/wechat.jpg" alt="wechat" width="300" />
 
-为了识别技术同行，请star后在加我时注明github当前star数，感谢！
+项目地址：[https://github.com/tal-tech/go-zero](https://github.com/tal-tech/go-zero)
 
-[https://github.com/tal-tech/go-zero](https://github.com/tal-tech/go-zero)
+码云地址：[https://gitee.com/kevwan/go-zero](https://gitee.com/kevwan/go-zero) (国内用户可访问gitee，每日自动从github同步代码)
 
-<img src="doc/images/wechat.jpg" alt="wechat" width="300" />
+开源中国年度评选，给 **go-zero** 投上一票：[https://www.oschina.net/p/go-zero](https://www.oschina.net/p/go-zero)

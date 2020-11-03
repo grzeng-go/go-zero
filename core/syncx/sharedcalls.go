@@ -34,7 +34,7 @@ func NewSharedCalls() SharedCalls {
 }
 
 func (g *sharedGroup) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
-	c, done := g.createCall(key, fn)
+	c, done := g.createCall(key)
 	if done {
 		return c.val, c.err
 	}
@@ -46,7 +46,7 @@ func (g *sharedGroup) Do(key string, fn func() (interface{}, error)) (interface{
 
 // 与Do具备相同功能，只是增加了fresh返回值，用来判断是直接执行了方法，还是返回别人执行的结果
 func (g *sharedGroup) DoEx(key string, fn func() (interface{}, error)) (val interface{}, fresh bool, err error) {
-	c, done := g.createCall(key, fn)
+	c, done := g.createCall(key)
 	if done {
 		return c.val, false, c.err
 	}
@@ -55,7 +55,7 @@ func (g *sharedGroup) DoEx(key string, fn func() (interface{}, error)) (val inte
 	return c.val, true, c.err
 }
 
-func (g *sharedGroup) createCall(key string, fn func() (interface{}, error)) (c *call, done bool) {
+func (g *sharedGroup) createCall(key string) (c *call, done bool) {
 	g.lock.Lock()
 	// 判断当前是否已经有人在执行该调用， 如果有的话，阻塞直到对方执行完后，直接获取它执行的结果
 	if c, ok := g.calls[key]; ok {
