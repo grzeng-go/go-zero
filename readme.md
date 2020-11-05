@@ -16,8 +16,6 @@ go-zero 是一个集成了各种工程实践的 web 和 rpc 框架。通过弹�
 
 go-zero 包含极简的 API 定义和生成工具 goctl，可以根据定义的 api 文件一键生成 Go, iOS, Android, Kotlin, Dart, TypeScript, JavaScript 代码，并可直接运行。
 
-看着觉得不错的，烦请 **Star**
-
 使用 go-zero 的好处：
 
 * 轻松获得支撑千万日活服务的稳定性
@@ -81,6 +79,8 @@ go-zero 是一个集成了各种工程实践的包含 web 和 rpc 框架，有�
 
 ![弹性设计](doc/images/resilience.jpg)
 
+觉得不错的话，别忘 **star** 👏
+
 ## 4. Installation
 
 在项目目录下通过如下命令安装：
@@ -95,7 +95,7 @@ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/tal-tech/
 
     [快速构建高并发微服务](https://github.com/tal-tech/zero-doc/blob/main/doc/shorturl.md)
 
-    [快速构建高并发微服务 - 多 RPC 版](https://github.com/tal-tech/zero-doc/blob/main/doc/bookstore.md)
+    [快速构建高并发微服务 - 多 RPC 版](https://github.com/tal-tech/zero-doc/blob/main/docs/frame/bookstore.md)
 
 1. 安装 goctl 工具
 
@@ -162,7 +162,7 @@ GO111MODULE=on GOPROXY=https://goproxy.cn/,direct go get -u github.com/tal-tech/
 
 * awesome 系列
   * [快速构建高并发微服务](https://github.com/tal-tech/zero-doc/blob/main/doc/shorturl.md)
-  * [快速构建高并发微服务 - 多 RPC 版](https://github.com/tal-tech/zero-doc/blob/main/doc/bookstore.md)
+  * [快速构建高并发微服务 - 多 RPC 版](https://github.com/tal-tech/zero-doc/blob/main/docs/frame/bookstore.md)
   * [goctl 使用帮助](https://github.com/tal-tech/zero-doc/blob/main/doc/goctl.md)
   * [通过 MapReduce 降低服务响应时间](https://github.com/tal-tech/zero-doc/blob/main/doc/mapreduce.md)
   * [关键字替换和敏感词过滤工具](https://github.com/tal-tech/zero-doc/blob/main/doc/keywords.md)
