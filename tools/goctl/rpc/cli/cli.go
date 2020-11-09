@@ -18,10 +18,10 @@ func Rpc(c *cli.Context) error {
 	out := c.String("dir")
 	protoImportPath := c.StringSlice("proto_path")
 	if len(src) == 0 {
-		return errors.New("the proto source can not be nil")
+		return errors.New("missing -src")
 	}
 	if len(out) == 0 {
-		return errors.New("the target directory can not be nil")
+		return errors.New("missing -dir")
 	}
 	g := generator.NewDefaultRpcGenerator()
 	return g.Generate(src, out, protoImportPath)
@@ -59,9 +59,10 @@ func RpcNew(c *cli.Context) error {
 }
 
 func RpcTemplate(c *cli.Context) error {
-	name := c.Args().First()
-	if len(name) == 0 {
-		name = "greet.proto"
+	protoFile := c.String("o")
+	if len(protoFile) == 0 {
+		return errors.New("missing -o")
 	}
-	return generator.ProtoTmpl(name)
+
+	return generator.ProtoTmpl(protoFile)
 }

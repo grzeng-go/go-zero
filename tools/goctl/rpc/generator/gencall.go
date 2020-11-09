@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tal-tech/go-zero/core/collection"
 	"github.com/tal-tech/go-zero/tools/goctl/rpc/parser"
 	"github.com/tal-tech/go-zero/tools/goctl/util"
 	"github.com/tal-tech/go-zero/tools/goctl/util/stringx"
@@ -51,7 +52,7 @@ func New{{.serviceName}}(cli zrpc.Client) {{.serviceName}} {
 
 	callFunctionTemplate = `
 {{if .hasComment}}{{.comment}}{{end}}
-func (m *default{{.rpcServiceName}}) {{.method}}(ctx context.Context,in *{{.pbRequest}}) (*{{.pbResponse}}, error) {
+func (m *default{{.serviceName}}) {{.method}}(ctx context.Context,in *{{.pbRequest}}) (*{{.pbResponse}}, error) {
 	client := {{.package}}.New{{.rpcServiceName}}Client(m.cli.Conn())
 	return client.{{.method}}(ctx, in)
 }
@@ -79,19 +80,19 @@ func (g *defaultGenerator) GenCall(ctx DirContext, proto parser.Proto) error {
 		return err
 	}
 
-	var alias []string
+	var alias = collection.NewSet()
 	for _, item := range service.RPC {
-		alias = append(alias, fmt.Sprintf("%s = %s", parser.CamelCase(item.RequestType), fmt.Sprintf("%s.%s", proto.PbPackage, parser.CamelCase(item.RequestType))))
-		alias = append(alias, fmt.Sprintf("%s = %s", parser.CamelCase(item.ReturnsType), fmt.Sprintf("%s.%s", proto.PbPackage, parser.CamelCase(item.ReturnsType))))
+		alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(item.RequestType), fmt.Sprintf("%s.%s", proto.PbPackage, parser.CamelCase(item.RequestType))))
+		alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(item.ReturnsType), fmt.Sprintf("%s.%s", proto.PbPackage, parser.CamelCase(item.ReturnsType))))
 	}
 
 	err = util.With("shared").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"name":        formatFilename(service.Name),
-		"alias":       strings.Join(alias, util.NL),
+		"alias":       strings.Join(alias.KeysStr(), util.NL),
 		"head":        head,
-		"filePackage": formatFilename(service.Name),
+		"filePackage": dir.Base,
 		"package":     fmt.Sprintf(`"%s"`, ctx.GetPb().Package),
-		"serviceName": parser.CamelCase(service.Name),
+		"serviceName": stringx.From(service.Name).ToCamel(),
 		"functions":   strings.Join(functions, util.NL),
 		"interface":   strings.Join(iFunctions, util.NL),
 	}, filename, true)
@@ -108,8 +109,9 @@ func (g *defaultGenerator) genFunction(goPackage string, service parser.Service)
 
 		comment := parser.GetComment(rpc.Doc())
 		buffer, err := util.With("sharedFn").Parse(text).Execute(map[string]interface{}{
-			"rpcServiceName": stringx.From(service.Name).Title(),
-			"method":         stringx.From(rpc.Name).Title(),
+			"serviceName":    stringx.From(service.Name).ToCamel(),
+			"rpcServiceName": parser.CamelCase(service.Name),
+			"method":         parser.CamelCase(rpc.Name),
 			"package":        goPackage,
 			"pbRequest":      parser.CamelCase(rpc.RequestType),
 			"pbResponse":     parser.CamelCase(rpc.ReturnsType),
@@ -139,7 +141,7 @@ func (g *defaultGenerator) getInterfaceFuncs(service parser.Service) ([]string, 
 			map[string]interface{}{
 				"hasComment": len(comment) > 0,
 				"comment":    comment,
-				"method":     stringx.From(rpc.Name).Title(),
+				"method":     parser.CamelCase(rpc.Name),
 				"pbRequest":  parser.CamelCase(rpc.RequestType),
 				"pbResponse": parser.CamelCase(rpc.ReturnsType),
 			})
