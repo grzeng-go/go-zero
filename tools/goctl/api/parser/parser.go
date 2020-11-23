@@ -3,6 +3,7 @@ package parser
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -14,9 +15,8 @@ import (
 )
 
 type Parser struct {
-	r       *bufio.Reader
-	typeDef string
-	api     *ApiStruct
+	r   *bufio.Reader
+	api *ApiStruct
 }
 
 func NewParser(filename string) (*Parser, error) {
@@ -34,10 +34,11 @@ func NewParser(filename string) (*Parser, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	for _, item := range strings.Split(apiStruct.Imports, "\n") {
-		ip := strings.TrimSpace(item)
-		if len(ip) > 0 {
-			item := strings.TrimPrefix(item, "import")
+		importLine := strings.TrimSpace(item)
+		if len(importLine) > 0 {
+			item := strings.TrimPrefix(importLine, "import")
 			item = strings.TrimSpace(item)
 			item = strings.TrimPrefix(item, `"`)
 			item = strings.TrimSuffix(item, `"`)
@@ -47,28 +48,43 @@ func NewParser(filename string) (*Parser, error) {
 			}
 			content, err := ioutil.ReadFile(path)
 			if err != nil {
+				return nil, errors.New("import api file not exist: " + item)
+			}
+
+			importStruct, err := ParseApi(string(content))
+			if err != nil {
 				return nil, err
 			}
-			apiStruct.StructBody += "\n" + string(content)
+
+			if len(importStruct.Imports) > 0 {
+				return nil, errors.New("import api should not import another api file recursive")
+			}
+
+			apiStruct.Type += "\n" + importStruct.Type
+			apiStruct.Service += "\n" + importStruct.Service
 		}
+	}
+
+	if len(strings.TrimSpace(apiStruct.Service)) == 0 {
+		return nil, errors.New("api has no service defined")
 	}
 
 	var buffer = new(bytes.Buffer)
 	buffer.WriteString(apiStruct.Service)
 	return &Parser{
-		r:       bufio.NewReader(buffer),
-		typeDef: apiStruct.StructBody,
-		api:     apiStruct,
+		r:   bufio.NewReader(buffer),
+		api: apiStruct,
 	}, nil
 }
 
 func (p *Parser) Parse() (api *spec.ApiSpec, err error) {
 	api = new(spec.ApiSpec)
-	var sp = StructParser{Src: p.typeDef}
+	var sp = StructParser{Src: p.api.Type}
 	types, err := sp.Parse()
 	if err != nil {
 		return nil, err
 	}
+
 	api.Types = types
 	var lineNumber = p.api.serviceBeginLine
 	st := newRootState(p.r, &lineNumber)
