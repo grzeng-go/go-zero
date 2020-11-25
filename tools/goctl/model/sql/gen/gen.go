@@ -7,11 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/tal-tech/go-zero/tools/goctl/config"
 	"github.com/tal-tech/go-zero/tools/goctl/model/sql/model"
 	"github.com/tal-tech/go-zero/tools/goctl/model/sql/parser"
 	"github.com/tal-tech/go-zero/tools/goctl/model/sql/template"
+	modelutil "github.com/tal-tech/go-zero/tools/goctl/model/sql/util"
 	"github.com/tal-tech/go-zero/tools/goctl/util"
 	"github.com/tal-tech/go-zero/tools/goctl/util/console"
+	"github.com/tal-tech/go-zero/tools/goctl/util/format"
 	"github.com/tal-tech/go-zero/tools/goctl/util/stringx"
 )
 
@@ -28,13 +31,13 @@ type (
 		//source string
 		dir string
 		console.Console
-		pkg         string
-		namingStyle string
+		pkg string
+		cfg *config.Config
 	}
 	Option func(generator *defaultGenerator)
 )
 
-func NewDefaultGenerator(dir, namingStyle string, opt ...Option) (*defaultGenerator, error) {
+func NewDefaultGenerator(dir string, cfg *config.Config, opt ...Option) (*defaultGenerator, error) {
 	if dir == "" {
 		dir = pwd
 	}
@@ -50,7 +53,7 @@ func NewDefaultGenerator(dir, namingStyle string, opt ...Option) (*defaultGenera
 		return nil, err
 	}
 
-	generator := &defaultGenerator{dir: dir, namingStyle: namingStyle, pkg: pkg}
+	generator := &defaultGenerator{dir: dir, cfg: cfg, pkg: pkg}
 	var optionList []Option
 	optionList = append(optionList, newDefaultOption())
 	optionList = append(optionList, opt...)
@@ -114,13 +117,12 @@ func (g *defaultGenerator) createFile(modelList map[string]string) error {
 
 	for tableName, code := range modelList {
 		tn := stringx.From(tableName)
-		name := fmt.Sprintf("%smodel.go", strings.ToLower(tn.ToCamel()))
-		switch g.namingStyle {
-		case NamingCamel:
-			name = fmt.Sprintf("%sModel.go", tn.ToCamel())
-		case NamingSnake:
-			name = fmt.Sprintf("%s_model.go", tn.ToSnake())
+		modelFilename, err := format.FileNamingFormat(g.cfg.NamingFormat, fmt.Sprintf("%s_model", tn.Source()))
+		if err != nil {
+			return err
 		}
+
+		name := modelFilename + ".go"
 		filename := filepath.Join(dirAbs, name)
 		if util.FileExists(filename) {
 			g.Warning("%s already exists, ignored.", name)
@@ -132,10 +134,12 @@ func (g *defaultGenerator) createFile(modelList map[string]string) error {
 		}
 	}
 	// generate error file
-	filename := filepath.Join(dirAbs, "vars.go")
-	if g.namingStyle == NamingCamel {
-		filename = filepath.Join(dirAbs, "Vars.go")
+	varFilename, err := format.FileNamingFormat(g.cfg.NamingFormat, "vars")
+	if err != nil {
+		return err
 	}
+
+	filename := filepath.Join(dirAbs, varFilename+".go")
 	text, err := util.LoadTemplate(category, errTemplateFile, template.Error)
 	if err != nil {
 		return err
@@ -219,39 +223,41 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		return "", err
 	}
 
-	typesCode, err := genTypes(table, withCache)
-	if err != nil {
-		return "", err
-	}
-
-	newCode, err := genNew(table, withCache)
-	if err != nil {
-		return "", err
-	}
-
-	insertCode, err := genInsert(table, withCache)
+	insertCode, insertCodeMethod, err := genInsert(table, withCache)
 	if err != nil {
 		return "", err
 	}
 
 	var findCode = make([]string, 0)
-	findOneCode, err := genFindOne(table, withCache)
+	findOneCode, findOneCodeMethod, err := genFindOne(table, withCache)
 	if err != nil {
 		return "", err
 	}
 
-	findOneByFieldCode, extraMethod, err := genFindOneByField(table, withCache)
+	ret, err := genFindOneByField(table, withCache)
 	if err != nil {
 		return "", err
 	}
 
-	findCode = append(findCode, findOneCode, findOneByFieldCode)
-	updateCode, err := genUpdate(table, withCache)
+	findCode = append(findCode, findOneCode, ret.findOneMethod)
+	updateCode, updateCodeMethod, err := genUpdate(table, withCache)
 	if err != nil {
 		return "", err
 	}
 
-	deleteCode, err := genDelete(table, withCache)
+	deleteCode, deleteCodeMethod, err := genDelete(table, withCache)
+	if err != nil {
+		return "", err
+	}
+
+	var list []string
+	list = append(list, insertCodeMethod, findOneCodeMethod, ret.findOneInterfaceMethod, updateCodeMethod, deleteCodeMethod)
+	typesCode, err := genTypes(table, strings.Join(modelutil.TrimStringSlice(list), util.NL), withCache)
+	if err != nil {
+		return "", err
+	}
+
+	newCode, err := genNew(table, withCache)
 	if err != nil {
 		return "", err
 	}
@@ -266,7 +272,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		"find":        strings.Join(findCode, "\n"),
 		"update":      updateCode,
 		"delete":      deleteCode,
-		"extraMethod": extraMethod,
+		"extraMethod": ret.cacheExtra,
 	})
 	if err != nil {
 		return "", err
