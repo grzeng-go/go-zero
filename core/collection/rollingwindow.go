@@ -56,7 +56,6 @@ func (rw *RollingWindow) Reduce(fn func(b *Bucket)) {
 	// 获取
 	span := rw.span()
 	// ignore current bucket, because of partial data
-	//
 	if span == 0 && rw.ignoreCurrent {
 		diff = rw.size - 1
 	} else {
@@ -85,32 +84,34 @@ func (rw *RollingWindow) span() int {
 func (rw *RollingWindow) updateOffset() {
 	// 获取当前偏移的增量
 	span := rw.span()
-	if span > 0 {
-		offset := rw.offset
-		// reset expired buckets
-		// 重置过期的桶
-		// 计算起始的位置
-		start := offset + 1
-		// 起始位置加上偏移增量，即为要重置的终点位置
-		steps := start + span
-		// 桶数量初始化时就设定好，当前偏移量，如果超出最大值，则从最开始处进行覆盖重置
-		var remainder int
-		if steps > rw.size {
-			remainder = steps - rw.size
-			steps = rw.size
-		}
-		for i := start; i < steps; i++ {
-			rw.win.resetBucket(i)
-			offset = i
-		}
-		for i := 0; i < remainder; i++ {
-			rw.win.resetBucket(i)
-			offset = i
-		}
-		// 重新设置当前偏移量及最后更新时间
-		rw.offset = offset
-		rw.lastTime = timex.Now()
+	if span <= 0 {
+		return
 	}
+
+	offset := rw.offset
+	// reset expired buckets
+	// 重置过期的桶
+	// 计算起始的位置
+	start := offset + 1
+	// 起始位置加上偏移增量，即为要重置的终点位置
+	steps := start + span
+	// 桶数量初始化时就设定好，当前偏移量，如果超出最大值，则从最开始处进行覆盖重置
+	var remainder int
+	if steps > rw.size {
+		remainder = steps - rw.size
+		steps = rw.size
+	}
+
+	// reset expired buckets
+	for i := start; i < steps; i++ {
+		rw.win.resetBucket(i)
+	}
+	for i := 0; i < remainder; i++ {
+		rw.win.resetBucket(i)
+	}
+	// 重新设置当前偏移量及最后更新时间
+	rw.offset = (offset + span) % rw.size
+	rw.lastTime = timex.Now()
 }
 
 type Bucket struct {
