@@ -137,9 +137,9 @@ type window struct {
 }
 
 func newWindow(size int) *window {
-	var buckets []*Bucket
+	buckets := make([]*Bucket, size)
 	for i := 0; i < size; i++ {
-		buckets = append(buckets, new(Bucket))
+		buckets[i] = new(Bucket)
 	}
 	return &window{
 		buckets: buckets,
@@ -155,13 +155,13 @@ func (w *window) add(offset int, v float64) {
 // 对[start, start+count)区间的桶进行fn操作
 func (w *window) reduce(start, count int, fn func(b *Bucket)) {
 	for i := 0; i < count; i++ {
-		fn(w.buckets[(start+i)%len(w.buckets)])
+		fn(w.buckets[(start+i)%w.size])
 	}
 }
 
 // 根据offset重置桶
 func (w *window) resetBucket(offset int) {
-	w.buckets[offset].reset()
+	w.buckets[offset%w.size].reset()
 }
 
 func IgnoreCurrentBucket() RollingWindowOption {
