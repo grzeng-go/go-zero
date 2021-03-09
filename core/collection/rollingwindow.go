@@ -8,9 +8,11 @@ import (
 )
 
 type (
+	// RollingWindowOption let callers customize the RollingWindow.
 	RollingWindowOption func(rollingWindow *RollingWindow)
 
 	// 移动窗口，用于统计数据
+	// RollingWindow defines a rolling window to calculate the events in buckets with time interval.
 	RollingWindow struct {
 		lock          sync.RWMutex
 		size          int
@@ -18,10 +20,12 @@ type (
 		interval      time.Duration
 		offset        int
 		ignoreCurrent bool
-		lastTime      time.Duration
+		lastTime      time.Duration // start time of the last bucket
 	}
 )
 
+// NewRollingWindow returns a RollingWindow that with size buckets and time interval,
+// use opts to customize the RollingWindow.
 func NewRollingWindow(size int, interval time.Duration, opts ...RollingWindowOption) *RollingWindow {
 	if size < 1 {
 		panic("size must be greater than 0")
@@ -39,6 +43,7 @@ func NewRollingWindow(size int, interval time.Duration, opts ...RollingWindowOpt
 	return w
 }
 
+// Add adds value to current bucket.
 func (rw *RollingWindow) Add(v float64) {
 	rw.lock.Lock()
 	defer rw.lock.Unlock()
@@ -48,6 +53,7 @@ func (rw *RollingWindow) Add(v float64) {
 	rw.win.add(rw.offset, v)
 }
 
+// Reduce runs fn on all buckets, ignore current bucket if ignoreCurrent was set.
 func (rw *RollingWindow) Reduce(fn func(b *Bucket)) {
 	rw.lock.RLock()
 	defer rw.lock.RUnlock()
@@ -75,9 +81,9 @@ func (rw *RollingWindow) span() int {
 	// 如果偏移量在[0, size)之间，则直接返回该值，否则返回size
 	if 0 <= offset && offset < rw.size {
 		return offset
-	} else {
-		return rw.size
 	}
+
+	return rw.size
 }
 
 // 基于时间更新偏移量
@@ -90,30 +96,17 @@ func (rw *RollingWindow) updateOffset() {
 
 	offset := rw.offset
 	// reset expired buckets
-	// 重置过期的桶
-	// 计算起始的位置
-	start := offset + 1
-	// 起始位置加上偏移增量，即为要重置的终点位置
-	steps := start + span
-	// 桶数量初始化时就设定好，当前偏移量，如果超出最大值，则从最开始处进行覆盖重置
-	var remainder int
-	if steps > rw.size {
-		remainder = steps - rw.size
-		steps = rw.size
-	}
-
-	// reset expired buckets
-	for i := start; i < steps; i++ {
-		rw.win.resetBucket(i)
-	}
-	for i := 0; i < remainder; i++ {
-		rw.win.resetBucket(i)
+	for i := 0; i < span; i++ {
+		rw.win.resetBucket((offset + i + 1) % rw.size)
 	}
 	// 重新设置当前偏移量及最后更新时间
 	rw.offset = (offset + span) % rw.size
-	rw.lastTime = timex.Now()
+	now := timex.Now()
+	// align to interval time boundary
+	rw.lastTime = now - (now-rw.lastTime)%rw.interval
 }
 
+// Bucket defines the bucket that holds sum and num of additions.
 type Bucket struct {
 	Sum   float64
 	Count int64
@@ -164,6 +157,7 @@ func (w *window) resetBucket(offset int) {
 	w.buckets[offset%w.size].reset()
 }
 
+// IgnoreCurrentBucket lets the Reduce call ignore current bucket.
 func IgnoreCurrentBucket() RollingWindowOption {
 	return func(w *RollingWindow) {
 		w.ignoreCurrent = true

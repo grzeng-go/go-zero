@@ -85,9 +85,9 @@ func (b *googleBreaker) doReq(req func() error, fallback func(err error) error, 
 	if err := b.accept(); err != nil {
 		if fallback != nil {
 			return fallback(err)
-		} else {
-			return err
 		}
+
+		return err
 	}
 
 	defer func() {

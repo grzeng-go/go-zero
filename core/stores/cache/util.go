@@ -4,6 +4,7 @@ import "strings"
 
 const keySeparator = ","
 
+// TotalWeights returns the total weights of given nodes.
 // 计算ClusterConf的总权重
 func TotalWeights(c []NodeConf) int {
 	var weights int

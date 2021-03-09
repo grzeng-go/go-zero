@@ -10,16 +10,19 @@ import (
 
 func genUpdate(table Table, withCache bool) (string, string, error) {
 	expressionValues := make([]string, 0)
-	for _, filed := range table.Fields {
-		camel := filed.Name.ToCamel()
+	for _, field := range table.Fields {
+		camel := field.Name.ToCamel()
 		if camel == "CreateTime" || camel == "UpdateTime" {
 			continue
 		}
-		if filed.IsPrimaryKey {
+
+		if field.Name.Source() == table.PrimaryKey.Name.Source() {
 			continue
 		}
+
 		expressionValues = append(expressionValues, "data."+camel)
 	}
+
 	expressionValues = append(expressionValues, "data."+table.PrimaryKey.Name.ToCamel())
 	camelTableName := table.Name.ToCamel()
 	text, err := util.LoadTemplate(category, updateTemplateFile, template.Update)
@@ -32,10 +35,10 @@ func genUpdate(table Table, withCache bool) (string, string, error) {
 		Execute(map[string]interface{}{
 			"withCache":             withCache,
 			"upperStartCamelObject": camelTableName,
-			"primaryCacheKey":       table.CacheKey[table.PrimaryKey.Name.Source()].DataKeyExpression,
-			"primaryKeyVariable":    table.CacheKey[table.PrimaryKey.Name.Source()].Variable,
+			"primaryCacheKey":       table.PrimaryCacheKey.DataKeyExpression,
+			"primaryKeyVariable":    table.PrimaryCacheKey.KeyLeft,
 			"lowerStartCamelObject": stringx.From(camelTableName).Untitle(),
-			"originalPrimaryKey":    table.PrimaryKey.Name.Source(),
+			"originalPrimaryKey":    wrapWithRawString(table.PrimaryKey.Name.Source()),
 			"expressionValues":      strings.Join(expressionValues, ", "),
 		})
 	if err != nil {

@@ -27,6 +27,7 @@ type (
 	}
 )
 
+// NewSharedCalls returns a SharedCalls.
 func NewSharedCalls() SharedCalls {
 	return &sharedGroup{
 		calls: make(map[string]*call),

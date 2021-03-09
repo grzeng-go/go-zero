@@ -41,6 +41,10 @@ func TestAuthHandler(t *testing.T) {
 			w.Header().Set("X-Test", "test")
 			_, err := w.Write([]byte("content"))
 			assert.Nil(t, err)
+
+			flusher, ok := w.(http.Flusher)
+			assert.True(t, ok)
+			flusher.Flush()
 		}))
 
 	resp := httptest.NewRecorder()
