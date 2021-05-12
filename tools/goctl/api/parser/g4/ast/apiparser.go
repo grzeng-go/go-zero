@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/antlr/antlr4/runtime/Go/antlr"
 	"github.com/tal-tech/go-zero/tools/goctl/api/parser/g4/gen/api"
 	"github.com/tal-tech/go-zero/tools/goctl/util/console"
+	"github.com/zeromicro/antlr"
 )
 
 type (
@@ -18,6 +18,7 @@ type (
 		debug      bool
 		log        console.Console
 		antlr.DefaultErrorListener
+		src string
 	}
 
 	// ParserOption defines an function with argument Parser
@@ -94,7 +95,8 @@ func (p *Parser) parse(filename, content string) (*Api, error) {
 	var apiAstList []*Api
 	apiAstList = append(apiAstList, root)
 	for _, imp := range root.Import {
-		path := imp.Value.Text()
+		dir := filepath.Dir(p.src)
+		path := filepath.Join(dir, imp.Value.Text())
 		data, err := p.readContent(path)
 		if err != nil {
 			return nil, err
@@ -175,7 +177,7 @@ func (p *Parser) valid(mainApi *Api, nestedApi *Api) error {
 		for _, g := range list {
 			handler := g.GetHandler()
 			if handler.IsNotNil() {
-				var handlerName = handler.Text()
+				handlerName := handler.Text()
 				handlerMap[handlerName] = Holder
 				path := fmt.Sprintf("%s://%s", g.Route.Method.Text(), g.Route.Path.Text())
 				routeMap[path] = Holder
@@ -420,6 +422,7 @@ func (p *Parser) readContent(filename string) (string, error) {
 		return "", err
 	}
 
+	p.src = abs
 	data, err := ioutil.ReadFile(abs)
 	if err != nil {
 		return "", err
